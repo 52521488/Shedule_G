@@ -1,0 +1,116 @@
+-- Минимальная БД для генерации расписания колледжа
+USE master;
+GO
+
+IF DB_ID('CollegeSchedule') IS NOT NULL
+    DROP DATABASE CollegeSchedule;
+GO
+
+CREATE DATABASE CollegeSchedule;
+GO
+
+USE CollegeSchedule;
+GO
+
+-- 1. Корпуса (2 штуки)
+CREATE TABLE Buildings (
+    Id          INT             IDENTITY(1,1) PRIMARY KEY,
+    ShortName   NVARCHAR(10)    NOT NULL UNIQUE,    -- 'А', 'Б'
+    Name        NVARCHAR(80)    NULL
+);
+
+-- 2. Кабинеты
+CREATE TABLE Rooms (
+    Id          INT             IDENTITY(1,1) PRIMARY KEY,
+    Name        NVARCHAR(60)    NOT NULL,
+    BuildingId  INT             NOT NULL FOREIGN KEY REFERENCES Buildings(Id),
+    Capacity    SMALLINT        NOT NULL DEFAULT 30,
+    CONSTRAINT UK_Room UNIQUE (BuildingId, Name)
+);
+
+-- 3. Преподаватели
+CREATE TABLE Teachers (
+    Id                  INT             IDENTITY(1,1) PRIMARY KEY,
+    FullName            NVARCHAR(120)   NOT NULL,
+    ShortName           NVARCHAR(50)    NOT NULL,
+    MonthlyLoadHours    SMALLINT        NOT NULL DEFAULT 0,
+    IsActive            BIT             NOT NULL DEFAULT 1
+);
+
+-- 4. Дисциплины
+CREATE TABLE Disciplines (
+    Id          INT             IDENTITY(1,1) PRIMARY KEY,
+    Name        NVARCHAR(150)   NOT NULL,
+    ShortName   NVARCHAR(60)    NULL,
+    Code        NVARCHAR(30)    NULL
+);
+
+-- 5. Кто какую дисциплину ведёт
+CREATE TABLE TeacherDisciplines (
+    TeacherId       INT NOT NULL FOREIGN KEY REFERENCES Teachers(Id),
+    DisciplineId    INT NOT NULL FOREIGN KEY REFERENCES Disciplines(Id),
+    PRIMARY KEY (TeacherId, DisciplineId)
+);
+
+-- 6. Группы
+CREATE TABLE StudentGroups (
+    Id              INT             IDENTITY(1,1) PRIMARY KEY,
+    Name            NVARCHAR(80)    NOT NULL,
+    Course          TINYINT         NOT NULL,
+    Semester        TINYINT         NOT NULL,
+    StudentsCount   SMALLINT        DEFAULT 0
+);
+
+-- 7. Подгруппы (если делят на лабы/ин.яз/практику)
+CREATE TABLE SubGroups (
+    Id              INT             IDENTITY(1,1) PRIMARY KEY,
+    GroupId         INT             NOT NULL FOREIGN KEY REFERENCES StudentGroups(Id) ON DELETE CASCADE,
+    Name            NVARCHAR(40)    NOT NULL,
+    StudentsCount   SMALLINT        NOT NULL,
+    UNIQUE (GroupId, Name)
+);
+
+-- 8. Нагрузка (сколько часов по дисциплине группе/подгруппе)
+CREATE TABLE GroupDisciplineLoads (
+    Id              INT             IDENTITY(1,1) PRIMARY KEY,
+    GroupId         INT             NOT NULL FOREIGN KEY REFERENCES StudentGroups(Id),
+    SubGroupId      INT             NULL FOREIGN KEY REFERENCES SubGroups(Id),
+    DisciplineId    INT             NOT NULL FOREIGN KEY REFERENCES Disciplines(Id),
+    TotalHours      SMALLINT        NOT NULL,
+    WeekParity      TINYINT         NOT NULL DEFAULT 0,     -- 0=обе недели, 1=верхняя, 2=нижняя
+    UNIQUE (GroupId, SubGroupId, DisciplineId, WeekParity)
+);
+
+-- 9. Шаблон пар (сетка времени)
+CREATE TABLE TimeSlots (
+    Id          INT             IDENTITY(1,1) PRIMARY KEY,
+    WeekDay     TINYINT         NOT NULL,           -- 1=Пн ... 6=Сб
+    PairNumber  TINYINT         NOT NULL,           -- 1..8
+    StartTime   TIME            NOT NULL,
+    EndTime     TIME            NOT NULL,
+    WeekParity  TINYINT         NOT NULL DEFAULT 0,
+    UNIQUE (WeekDay, PairNumber, WeekParity)
+);
+
+-- 10. Сгенерированные расписания
+CREATE TABLE Schedules (
+    Id              INT             IDENTITY(1,1) PRIMARY KEY,
+    Title           NVARCHAR(150)   NOT NULL,
+    AcademicYear    SMALLINT        NOT NULL,
+    Semester        TINYINT         NOT NULL,
+    GeneratedAt     DATETIME2       DEFAULT SYSUTCDATETIME(),
+    FitnessScore    FLOAT           NULL,
+    IsApproved      BIT             DEFAULT 0
+);
+
+-- 11. Слоты расписания (основная таблица)
+CREATE TABLE ScheduleEntries (
+    Id              BIGINT          IDENTITY(1,1) PRIMARY KEY,
+    ScheduleId      INT             NOT NULL FOREIGN KEY REFERENCES Schedules(Id) ON DELETE CASCADE,
+    TimeSlotId      INT             NOT NULL FOREIGN KEY REFERENCES TimeSlots(Id),
+    GroupId         INT             NOT NULL FOREIGN KEY REFERENCES StudentGroups(Id),
+    SubGroupId      INT             NULL            FOREIGN KEY REFERENCES SubGroups(Id),
+    TeacherId       INT             NOT NULL FOREIGN KEY REFERENCES Teachers(Id),
+    DisciplineId    INT             NOT NULL FOREIGN KEY REFERENCES Disciplines(Id),
+    RoomId          INT             NOT NULL FOREIGN KEY REFERENCES Rooms(Id),
+);
