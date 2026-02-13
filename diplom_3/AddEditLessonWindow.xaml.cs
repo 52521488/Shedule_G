@@ -1,6 +1,6 @@
 ﻿using System.Windows;
 
-namespace diplom_2
+namespace diplom_3
 {
     public partial class AddEditLessonWindow : Window
     {

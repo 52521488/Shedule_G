@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace diplom_2.Core.Strategies
+namespace diplom_3.Core.Strategies
 {
 
         public static class ScheduleStrategyFactory

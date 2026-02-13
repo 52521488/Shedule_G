@@ -1,5 +1,7 @@
-﻿using diplom_2.Core.Strategies;
-using diplom_2.Models;
+﻿using diplom_3.Core.Strategies;
+using diplom_3.Models;
+using diplom_3.ViewModels;
+using diplom_3.Core;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -8,8 +10,10 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Media;
+using Microsoft.Extensions.DependencyInjection;
+using diplom_3.Core.Interfaces;
 
-namespace diplom_2
+namespace diplom_3
 {
     public partial class MainWindow : Window
     {
@@ -119,28 +123,36 @@ namespace diplom_2
             // Зум обновляется автоматически через binding + converter
         }
 
-        // Добавление нового занятия
+        // Добавление
         private void AddLesson_Click(object sender, RoutedEventArgs e)
         {
             var window = new AddEditLessonWindow();
-            window.DataContext = new AddLessonViewModel(
-                lessons: _vm.Lessons,
-                notifyUpdate: () => BuildScheduleGrid(),
-                conflictChecker: new SimpleConflictStrategy()
+            var service = (Application.Current as App)?.ServiceProvider.GetRequiredService<IScheduleService>();
+
+            window.DataContext = new AddEditLessonViewModel(
+                service,                    // 1. IScheduleService
+                _vm.Lessons,                // 2. ObservableCollection<LessonDto>
+                () => BuildScheduleGrid(),  // 3. Action notify
+                new Core.SimpleConflictStrategy()  // 4. IScheduleStrategy
             );
+
             window.ShowDialog();
         }
 
-        // Редактирование (вызывается из двойного клика по ячейке)
-        private void EditLesson(LessonModel lesson)
+        // Редактирование
+        private void EditLesson(LessonDto lesson)
         {
             var window = new AddEditLessonWindow { Title = "Редактировать занятие" };
-            window.DataContext = new AddLessonViewModel(
-                lessons: _vm.Lessons,
-                notifyUpdate: () => BuildScheduleGrid(),
-                conflictChecker: new SimpleConflictStrategy(),
-                editingLesson: lesson
+            var service = (Application.Current as App)?.ServiceProvider.GetRequiredService<IScheduleService>();
+
+            window.DataContext = new AddEditLessonViewModel(
+                service,
+                _vm.Lessons,
+                () => BuildScheduleGrid(),
+                new Core.SimpleConflictStrategy(),
+                lesson
             );
+
             window.ShowDialog();
         }
         private void Refresh_Click(object sender, RoutedEventArgs e)

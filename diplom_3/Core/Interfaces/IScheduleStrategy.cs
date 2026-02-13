@@ -3,18 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using diplom_2.Models;
+using diplom_3.Models;
 
-namespace diplom_2.Core
+namespace diplom_3.Core
 {
     public interface IScheduleStrategy
     {
-        bool HasConflict(LessonModel candidate, IEnumerable<LessonModel> existing);
+        bool HasConflict(LessonDto candidate, IEnumerable<LessonDto> existing);
     }
 
     public class SimpleConflictStrategy : IScheduleStrategy
     {
-        public bool HasConflict(LessonModel candidate, IEnumerable<LessonModel> existing)
+        public bool HasConflict(LessonDto candidate, IEnumerable<LessonDto> existing)
         {
             return existing.Any(l =>
                 l.Day == candidate.Day &&
