@@ -23,8 +23,6 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <!-- для подгруппы, если будет -->
-            <RowDefinition Height="*"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
@@ -33,7 +31,8 @@
         <TextBlock Grid.Row="0" Text="День недели *" Margin="0,0,0,4" FontWeight="SemiBold" FontSize="14"/>
         <ComboBox Grid.Row="1" ItemsSource="{Binding Days}"
                   SelectedItem="{Binding SelectedDay}"
-                  DisplayMemberPath="Name"
+                  IsEditable="True"
+                  Text="{Binding SelectedDay, UpdateSourceTrigger=PropertyChanged}"
                   Margin="0,0,0,16" Height="32"/>
 
         <!-- 2. Время (пара) -->
@@ -41,44 +40,54 @@
         <ComboBox Grid.Row="3" ItemsSource="{Binding TimeSlots}"
                   SelectedItem="{Binding SelectedTimeSlot}"
                   DisplayMemberPath="Display"
-            Margin="0,0,0,16" Height="32"/>
-
-            <!-- 3. Аудитория -->
-            <TextBlock Grid.Row="4" Text="Аудитория *" Margin="0,0,0,4" FontWeight="SemiBold" FontSize="14"/>
-            <ComboBox Grid.Row="5" ItemsSource="{Binding Rooms}"
-                  SelectedItem="{Binding SelectedRoom}"
-                  DisplayMemberPath="Name"
+                  IsEditable="True"
+                  Text="{Binding TimeSlotText, UpdateSourceTrigger=PropertyChanged}"
                   Margin="0,0,0,16" Height="32"/>
 
-            <!-- 4. Предмет / Дисциплина -->
-            <TextBlock Grid.Row="6" Text="Дисциплина *" Margin="0,0,0,4" FontWeight="SemiBold" FontSize="14"/>
-            <ComboBox Grid.Row="7" ItemsSource="{Binding Disciplines}"
+        <!-- 3. Аудитория -->
+        <TextBlock Grid.Row="4" Text="Аудитория *" Margin="0,0,0,4" FontWeight="SemiBold" FontSize="14"/>
+        <ComboBox Grid.Row="5" ItemsSource="{Binding Rooms}"
+                  SelectedItem="{Binding SelectedRoom}"
+                  DisplayMemberPath="Name"
+                  IsEditable="True"
+                  Text="{Binding RoomName, UpdateSourceTrigger=PropertyChanged}"
+                  Margin="0,0,0,16" Height="32"/>
+
+        <!-- 4. Предмет / Дисциплина -->
+        <TextBlock Grid.Row="6" Text="Дисциплина *" Margin="0,0,0,4" FontWeight="SemiBold" FontSize="14"/>
+        <ComboBox Grid.Row="7" ItemsSource="{Binding Disciplines}"
                   SelectedItem="{Binding SelectedDiscipline}"
-                  DisplayMemberPath="ShortName"
+                  DisplayMemberPath="Name"
+                  IsEditable="True"
+                  Text="{Binding DisciplineName, UpdateSourceTrigger=PropertyChanged}"
                   ToolTip="{Binding SelectedDiscipline.Name}"
                   Margin="0,0,0,16" Height="32"/>
 
-            <!-- 5. Группа -->
-            <TextBlock Grid.Row="8" Text="Группа *" Margin="0,0,0,4" FontWeight="SemiBold" FontSize="14"/>
-            <ComboBox Grid.Row="9" ItemsSource="{Binding Groups}"
+        <!-- 5. Группа -->
+        <TextBlock Grid.Row="8" Text="Группа *" Margin="0,0,0,4" FontWeight="SemiBold" FontSize="14"/>
+        <ComboBox Grid.Row="9" ItemsSource="{Binding Groups}"
                   SelectedItem="{Binding SelectedGroup}"
                   DisplayMemberPath="Name"
+                  IsEditable="True"
+                  Text="{Binding GroupName, UpdateSourceTrigger=PropertyChanged}"
                   Margin="0,0,0,16" Height="32"/>
 
-            <!-- 6. Преподаватель -->
-            <TextBlock Grid.Row="10" Text="Преподаватель *" Margin="0,0,0,4" FontWeight="SemiBold" FontSize="14"/>
-            <ComboBox Grid.Row="11" ItemsSource="{Binding Teachers}"
+        <!-- 6. Преподаватель -->
+        <TextBlock Grid.Row="10" Text="Преподаватель *" Margin="0,0,0,4" FontWeight="SemiBold" FontSize="14"/>
+        <ComboBox Grid.Row="11" ItemsSource="{Binding Teachers}"
                   SelectedItem="{Binding SelectedTeacher}"
-                  DisplayMemberPath="ShortName"
+                  DisplayMemberPath="FullName"
+                  IsEditable="True"
+                  Text="{Binding TeacherName, UpdateSourceTrigger=PropertyChanged}"
                   ToolTip="{Binding SelectedTeacher.FullName}"
                   Margin="0,0,0,24" Height="32"/>
 
-            <!-- Кнопки -->
-            <StackPanel Grid.Row="12" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
-                <Button Content="Отмена" Width="110" Height="38" Margin="0,0,16,0"
-                    Command="{Binding CancelCommand}"/>
-                <Button Content="Сохранить" Width="110" Height="38" IsDefault="True"
-                    Command="{Binding SaveCommand}"/>
-            </StackPanel>
+        <!-- Кнопки -->
+        <StackPanel Grid.Row="12" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="Отмена" Width="110" Height="38" Margin="0,0,16,0"
+                Command="{Binding CancelCommand}"/>
+            <Button Content="Сохранить" Width="110" Height="38" IsDefault="True"
+                Command="{Binding SaveCommand}"/>
+        </StackPanel>
     </Grid>
 </Window>

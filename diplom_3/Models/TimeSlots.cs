@@ -15,7 +15,7 @@ namespace diplom_3.Models
         public TimeSpan StartTime { get; set; }
         public TimeSpan EndTime { get; set; }
         public byte WeekParity { get; set; } = 0;
-        public string Display => $"{PairNumber}. {StartTime:hh\\:mm} – {EndTime:hh\\:mm}";
+        public string Display => $"{StartTime:hh\\:mm}-{EndTime:hh\\:mm}";
         public virtual ICollection<ScheduleEntry> ScheduleEntries { get; set; } = new List<ScheduleEntry>();
     }
 }

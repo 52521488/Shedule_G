@@ -125,6 +125,7 @@ namespace diplom_3.Core.Services
             var query = _context.ScheduleEntries
                 .Include(e => e.TimeSlot)
                 .Include(e => e.Group)
+                .Include(e => e.SubGroup)
                 .Include(e => e.Teacher)
                 .Include(e => e.Discipline)
                 .Include(e => e.Room)
@@ -144,7 +145,7 @@ namespace diplom_3.Core.Services
 
             return entries.Select(e => new LessonDto
             {
-                Id = (int)e.Id,
+                Id = e.Id,
                 Day = GetDayName(e.TimeSlot!.WeekDay),
                 TimeSlot = $"{e.TimeSlot.StartTime:hh\\:mm} – {e.TimeSlot.EndTime:hh\\:mm}",
                 Room = e.Room?.Name ?? "—",
@@ -159,6 +160,9 @@ namespace diplom_3.Core.Services
                 TeacherId = e.TeacherId,
                 GroupId = e.GroupId,
                 DisciplineId = e.DisciplineId,
+                SubGroupId = e.SubGroupId,
+                SubGroupName = e.SubGroup?.Name ?? "",
+                WeekType = e.TimeSlot.WeekParity == 0 ? "both" : (e.TimeSlot.WeekParity == 1 ? "upper" : "lower"),
                 IsCanceled = false   // пока нет флага отмены в базе
             })
             .OrderBy(l => l.WeekDayNumber)
@@ -178,39 +182,22 @@ namespace diplom_3.Core.Services
             _ => "???"
         };
 
-        Task<List<StudentGroup>> IScheduleService.GetAllGroupsAsync()
-        {
-            throw new NotImplementedException();
-        }
+        Task<List<StudentGroup>> IScheduleService.GetAllGroupsAsync() => GetAllGroupsAsync();
 
-        Task<List<Teacher>> IScheduleService.GetAllTeachersAsync()
-        {
-            throw new NotImplementedException();
-        }
+        Task<List<Teacher>> IScheduleService.GetAllTeachersAsync() => GetAllTeachersAsync();
 
-        Task<List<Discipline>> IScheduleService.GetAllDisciplinesAsync()
-        {
-            throw new NotImplementedException();
-        }
+        Task<List<Discipline>> IScheduleService.GetAllDisciplinesAsync() => GetAllDisciplinesAsync();
 
-        Task<List<Room>> IScheduleService.GetAllRoomsAsync()
-        {
-            throw new NotImplementedException();
-        }
+        Task<List<Room>> IScheduleService.GetAllRoomsAsync() => GetAllRoomsAsync();
 
-        Task<List<TimeSlot>> IScheduleService.GetAllTimeSlotsAsync()
-        {
-            throw new NotImplementedException();
-        }
+        Task<List<TimeSlot>> IScheduleService.GetAllTimeSlotsAsync() => GetAllTimeSlotsAsync();
 
         Task IScheduleService.SaveLessonAsync(LessonDto lesson)
         {
-            throw new NotImplementedException();
+            // Используем scheduleId = 1 по умолчанию, если не передан
+            return SaveLessonAsync(lesson, 1);
         }
 
-        Task IScheduleService.UpdateLessonAsync(LessonDto lesson)
-        {
-            throw new NotImplementedException();
-        }
+        Task IScheduleService.UpdateLessonAsync(LessonDto lesson) => UpdateLessonAsync(lesson);
     }
 }

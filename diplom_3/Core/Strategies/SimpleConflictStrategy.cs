@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using diplom_3.Models;
+using diplom_3.Core.Interfaces;
 
 namespace diplom_3.Core.Strategies
 {

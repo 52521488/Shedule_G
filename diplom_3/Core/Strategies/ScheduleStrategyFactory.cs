@@ -1,25 +1,16 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using diplom_3.Core.Interfaces;
 
 namespace diplom_3.Core.Strategies
 {
-
-        public static class ScheduleStrategyFactory
+    public static class ScheduleStrategyFactory
+    {
+        public static IScheduleStrategy Create(string strategyName = "Simple")
         {
-            public static IScheduleStrategy Create(string strategyName = "Simple")
+            return strategyName?.ToLower() switch
             {
-                switch (strategyName.ToLower())
-                {
-                    case "simple":
-                        return new SimpleConflictStrategy();
-                    // case "strict":
-                    //     return new StrictConflictStrategy();
-                    default:
-                        return new SimpleConflictStrategy();
-                }
-            }
+                "simple" => new SimpleConflictStrategy(),
+                _ => new SimpleConflictStrategy()
+            };
         }
+    }
 }

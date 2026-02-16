@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-
 using diplom_3.Models;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 
 namespace diplom_3.Core.Interfaces
 {

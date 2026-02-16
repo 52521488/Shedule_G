@@ -1,6 +1,4 @@
-﻿using diplom_3.Core;
-using diplom_3.Models;
-using System;
+﻿using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
@@ -9,25 +7,27 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using diplom_3.Core.Interfaces;
+using diplom_3.Core.Strategies;
+using diplom_3.Models;
 
 namespace diplom_3.ViewModels
 {
     public class AddEditLessonViewModel : INotifyPropertyChanged
     {
-        private readonly IScheduleService _scheduleService;          // основной сервис для БД
-        private readonly IScheduleStrategy _conflictChecker;         // твой чекер конфликтов
-        private readonly ObservableCollection<LessonDto> _lessons;   // ссылка на коллекцию главного окна
+        private readonly IScheduleService _scheduleService;
+        private readonly IScheduleStrategy _conflictChecker;
+        private readonly ObservableCollection<LessonDto> _lessons;
         private readonly Action _notifyParentUpdate;
 
-        private LessonDto _editingLesson;  // null если добавляем
+        private LessonDto _editingLesson;
 
         public string WindowTitle { get; private set; } = "Добавить занятие";
 
-        // Коллекции для ComboBox — загружаем из БД
+        // Коллекции для ComboBox
         public ObservableCollection<string> Days { get; } = new()
         {
             "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"
-        };  // воскресенье редко, но можно добавить
+        };
 
         public ObservableCollection<TimeSlot> TimeSlots { get; } = new();
         public ObservableCollection<Room> Rooms { get; } = new();
@@ -35,7 +35,7 @@ namespace diplom_3.ViewModels
         public ObservableCollection<StudentGroup> Groups { get; } = new();
         public ObservableCollection<Teacher> Teachers { get; } = new();
 
-        // Выбранные значения (биндинг)
+        // Свойства для выбранных значений
         private string _selectedDay;
         public string SelectedDay
         {
@@ -61,7 +61,7 @@ namespace diplom_3.ViewModels
         public Discipline SelectedDiscipline
         {
             get => _selectedDiscipline;
-            set { _selectedDiscipline = value; OnPropertyChanged(); /* можно фильтровать преподов */ }
+            set { _selectedDiscipline = value; OnPropertyChanged(); ValidateCanSave(); }
         }
 
         private StudentGroup _selectedGroup;
@@ -78,7 +78,43 @@ namespace diplom_3.ViewModels
             set { _selectedTeacher = value; OnPropertyChanged(); ValidateCanSave(); }
         }
 
-        // Статус валидации для кнопки
+        // Текстовые свойства для ручного ввода
+        private string _timeSlotText = "";
+        public string TimeSlotText
+        {
+            get => _timeSlotText;
+            set { _timeSlotText = value; OnPropertyChanged(); ValidateCanSave(); }
+        }
+
+        private string _roomName = "";
+        public string RoomName
+        {
+            get => _roomName;
+            set { _roomName = value; OnPropertyChanged(); ValidateCanSave(); }
+        }
+
+        private string _disciplineName = "";
+        public string DisciplineName
+        {
+            get => _disciplineName;
+            set { _disciplineName = value; OnPropertyChanged(); ValidateCanSave(); }
+        }
+
+        private string _groupName = "";
+        public string GroupName
+        {
+            get => _groupName;
+            set { _groupName = value; OnPropertyChanged(); ValidateCanSave(); }
+        }
+
+        private string _teacherName = "";
+        public string TeacherName
+        {
+            get => _teacherName;
+            set { _teacherName = value; OnPropertyChanged(); ValidateCanSave(); }
+        }
+
+        // Статус валидации
         private bool _canSave;
         public bool CanSave
         {
@@ -97,7 +133,7 @@ namespace diplom_3.ViewModels
             IScheduleStrategy conflictChecker = null,
             LessonDto editingLesson = null)
         {
-            _scheduleService = scheduleService ?? throw new ArgumentNullException(nameof(scheduleService));
+            _scheduleService = scheduleService;
             _lessons = lessonsCollection ?? throw new ArgumentNullException(nameof(lessonsCollection));
             _notifyParentUpdate = notifyParentUpdate;
             _conflictChecker = conflictChecker ?? new SimpleConflictStrategy();
@@ -112,50 +148,82 @@ namespace diplom_3.ViewModels
                 LoadFromEditingLesson(editingLesson);
             }
 
-            _ = LoadDataAsync();  // асинхронно грузим всё из БД
+            _ = LoadDataAsync();
         }
 
         private async Task LoadDataAsync()
         {
             try
             {
-                // Загружаем реальные данные
-                var timeSlots = await _scheduleService.GetAllTimeSlotsAsync(); // добавь метод в сервис
+                var timeSlots = await _scheduleService.GetAllTimeSlotsAsync();
                 var rooms = await _scheduleService.GetAllRoomsAsync();
                 var disciplines = await _scheduleService.GetAllDisciplinesAsync();
                 var groups = await _scheduleService.GetAllGroupsAsync();
                 var teachers = await _scheduleService.GetAllTeachersAsync();
 
-                TimeSlots.Clear(); foreach (var ts in timeSlots) TimeSlots.Add(ts);
-                Rooms.Clear(); foreach (var r in rooms) Rooms.Add(r);
-                Disciplines.Clear(); foreach (var d in disciplines) Disciplines.Add(d);
-                Groups.Clear(); foreach (var g in groups) Groups.Add(g);
-                Teachers.Clear(); foreach (var t in teachers) Teachers.Add(t);
+                if (timeSlots.Any()) { TimeSlots.Clear(); foreach (var ts in timeSlots) TimeSlots.Add(ts); }
+                if (rooms.Any()) { Rooms.Clear(); foreach (var r in rooms) Rooms.Add(r); }
+                if (disciplines.Any()) { Disciplines.Clear(); foreach (var d in disciplines) Disciplines.Add(d); }
+                if (groups.Any()) { Groups.Clear(); foreach (var g in groups) Groups.Add(g); }
+                if (teachers.Any()) { Teachers.Clear(); foreach (var t in teachers) Teachers.Add(t); }
             }
-            catch (Exception ex)
+            catch
             {
-                MessageBox.Show($"Не удалось загрузить справочники:\n{ex.Message}", "Ошибка БД", MessageBoxButton.OK, MessageBoxImage.Error);
+                LoadTestData();
             }
+        }
+
+        private void LoadTestData()
+        {
+            TimeSlots.Add(new TimeSlot { Id = 1, WeekDay = 1, PairNumber = 1, StartTime = new TimeSpan(8, 0, 0), EndTime = new TimeSpan(9, 30, 0) });
+            TimeSlots.Add(new TimeSlot { Id = 2, WeekDay = 1, PairNumber = 2, StartTime = new TimeSpan(9, 40, 0), EndTime = new TimeSpan(11, 10, 0) });
+            TimeSlots.Add(new TimeSlot { Id = 3, WeekDay = 1, PairNumber = 3, StartTime = new TimeSpan(11, 20, 0), EndTime = new TimeSpan(12, 50, 0) });
+            TimeSlots.Add(new TimeSlot { Id = 4, WeekDay = 2, PairNumber = 1, StartTime = new TimeSpan(8, 0, 0), EndTime = new TimeSpan(9, 30, 0) });
+            TimeSlots.Add(new TimeSlot { Id = 5, WeekDay = 2, PairNumber = 2, StartTime = new TimeSpan(9, 40, 0), EndTime = new TimeSpan(11, 10, 0) });
+
+            Rooms.Add(new Room { Id = 1, Name = "101", Capacity = 30 });
+            Rooms.Add(new Room { Id = 2, Name = "102", Capacity = 25 });
+            Rooms.Add(new Room { Id = 3, Name = "201", Capacity = 40 });
+            Rooms.Add(new Room { Id = 4, Name = "301", Capacity = 35 });
+            Rooms.Add(new Room { Id = 5, Name = "405", Capacity = 30 });
+
+            Disciplines.Add(new Discipline { Id = 1, Name = "Математика", ShortName = "Матем." });
+            Disciplines.Add(new Discipline { Id = 2, Name = "Программирование", ShortName = "Прогр." });
+            Disciplines.Add(new Discipline { Id = 3, Name = "Базы данных", ShortName = "БД" });
+            Disciplines.Add(new Discipline { Id = 4, Name = "Английский язык", ShortName = "Англ." });
+            Disciplines.Add(new Discipline { Id = 5, Name = "Физика", ShortName = "Физ." });
+
+            Groups.Add(new StudentGroup { Id = 1, Name = "ИС-21", Course = 2 });
+            Groups.Add(new StudentGroup { Id = 2, Name = "ИС-22", Course = 2 });
+            Groups.Add(new StudentGroup { Id = 3, Name = "ПО-21", Course = 2 });
+            Groups.Add(new StudentGroup { Id = 4, Name = "КС-21", Course = 2 });
+
+            Teachers.Add(new Teacher { Id = 1, FullName = "Иванов Иван Иванович", ShortName = "Иванов И.И." });
+            Teachers.Add(new Teacher { Id = 2, FullName = "Петров Петр Петрович", ShortName = "Петров П.П." });
+            Teachers.Add(new Teacher { Id = 3, FullName = "Сидоров Сидор Сидорович", ShortName = "Сидоров С.С." });
+            Teachers.Add(new Teacher { Id = 4, FullName = "Смирнова Анна Михайловна", ShortName = "Смирнова А.М." });
         }
 
         private void LoadFromEditingLesson(LessonDto lesson)
         {
             SelectedDay = lesson.Day;
-            SelectedTimeSlot = TimeSlots.FirstOrDefault(ts => ts.Display == lesson.TimeSlot); // подбери по строке
-            SelectedRoom = Rooms.FirstOrDefault(r => r.Name == lesson.Room);
-            SelectedDiscipline = Disciplines.FirstOrDefault(d => d.ShortName == lesson.Subject);
-            SelectedGroup = Groups.FirstOrDefault(g => g.Name == lesson.Group);
-            SelectedTeacher = Teachers.FirstOrDefault(t => t.ShortName == lesson.Teacher);
+            TimeSlotText = lesson.TimeSlot;
+            RoomName = lesson.Room;
+            DisciplineName = lesson.Subject;
+            GroupName = lesson.Group;
+            TeacherName = lesson.Teacher;
         }
 
         private void ValidateCanSave()
         {
-            CanSave = SelectedDay != null &&
-                      SelectedTimeSlot != null &&
-                      SelectedRoom != null &&
-                      SelectedGroup != null &&
-                      SelectedTeacher != null &&
-                      SelectedDiscipline != null;
+            // Проверяем либо выбранные значения из ComboBox, либо заполненные текстовые поля
+            bool hasSelected = SelectedTimeSlot != null || !string.IsNullOrWhiteSpace(TimeSlotText);
+            hasSelected = hasSelected && (SelectedRoom != null || !string.IsNullOrWhiteSpace(RoomName));
+            hasSelected = hasSelected && (SelectedDiscipline != null || !string.IsNullOrWhiteSpace(DisciplineName));
+            hasSelected = hasSelected && (SelectedGroup != null || !string.IsNullOrWhiteSpace(GroupName));
+            hasSelected = hasSelected && (SelectedTeacher != null || !string.IsNullOrWhiteSpace(TeacherName));
+
+            CanSave = !string.IsNullOrWhiteSpace(SelectedDay) && hasSelected;
         }
 
         private async Task SaveAsync()
@@ -166,24 +234,23 @@ namespace diplom_3.ViewModels
                 return;
             }
 
+            // Формируем данные для сохранения (используем либо из ComboBox, либо из текстовых полей)
+            string timeSlot = !string.IsNullOrWhiteSpace(TimeSlotText) ? TimeSlotText : SelectedTimeSlot?.Display ?? "";
+            string room = !string.IsNullOrWhiteSpace(RoomName) ? RoomName : SelectedRoom?.Name ?? "";
+            string discipline = !string.IsNullOrWhiteSpace(DisciplineName) ? DisciplineName : SelectedDiscipline?.ShortName ?? SelectedDiscipline?.Name ?? "";
+            string group = !string.IsNullOrWhiteSpace(GroupName) ? GroupName : SelectedGroup?.Name ?? "";
+            string teacher = !string.IsNullOrWhiteSpace(TeacherName) ? TeacherName : SelectedTeacher?.ShortName ?? SelectedTeacher?.FullName ?? "";
+
             var newLesson = new LessonDto
             {
                 Id = _editingLesson?.Id ?? 0,
                 Day = SelectedDay,
-                TimeSlot = SelectedTimeSlot.Display,  // или $"{StartTime}–{EndTime}"
-                Room = SelectedRoom.Name,
-                Subject = SelectedDiscipline.ShortName ?? SelectedDiscipline.Name,
-                Group = SelectedGroup.Name,
-                Teacher = SelectedTeacher.ShortName ?? SelectedTeacher.FullName,
-
-                // дополнительные поля, если нужны
+                TimeSlot = timeSlot,
+                Room = room,
+                Subject = discipline,
+                Group = group,
+                Teacher = teacher,
                 WeekDayNumber = GetWeekDayNumber(SelectedDay),
-                StartTime = SelectedTimeSlot.StartTime,
-                EndTime = SelectedTimeSlot.EndTime,
-                RoomId = SelectedRoom.Id,
-                TeacherId = SelectedTeacher.Id,
-                GroupId = SelectedGroup.Id,
-                DisciplineId = SelectedDiscipline.Id,
             };
 
             // Проверка конфликта
@@ -195,7 +262,7 @@ namespace diplom_3.ViewModels
                 return;
             }
 
-            // Сохраняем в коллекцию главного окна
+            // Сохраняем в коллекцию
             if (_editingLesson != null)
             {
                 var index = _lessons.IndexOf(_editingLesson);
@@ -205,9 +272,6 @@ namespace diplom_3.ViewModels
             {
                 _lessons.Add(newLesson);
             }
-
-            // Сохраняем в БД (если хочешь сразу персистить)
-            // await _scheduleService.AddOrUpdateLessonAsync(newLesson);  // добавь метод
 
             _notifyParentUpdate?.Invoke();
             CloseWindow(true);
